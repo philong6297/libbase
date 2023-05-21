@@ -1,0 +1,14 @@
+---
+Checks: >
+  -cppcoreguidelines-pro-type-vararg,
+  -hicpp-vararg,
+  -*-magic-numbers,
+  -misc-non-private-member-variables-in-classes
+InheritParentConfig: true
+CheckOptions:
+  - key: hicpp-signed-bitwise.IgnorePositiveIntegerLiterals
+    value: true
+  - key: readability-identifier-length.MinimumVariableNameLength
+    value: 1
+  - key: readability-identifier-length.MinimumParameterNameLength
+    value: 1

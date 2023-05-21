@@ -1,0 +1,52 @@
+{
+  "[cpp]": {
+    "editor.defaultFormatter": "xaver.clang-format"
+  },
+  "clangd.arguments": [
+    "--clang-tidy",
+    "--header-insertion=never",
+  ],
+  "C_Cpp.codeAnalysis.clangTidy.enabled": false,
+  "C_Cpp.intelliSenseEngine": "disabled",
+  "C_Cpp.autocomplete": "disabled",
+  "C_Cpp.intelliSenseEngineFallback": "disabled",
+  "cmake.configureOnEdit": false,
+  "cmake.configureOnOpen": false,
+  "cmake.statusbar.visibility": "icon",
+  "cmakeFormat.exePath": "/usr/local/bin/cmake-format",
+  "editor.formatOnSave": true,
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/*.code-search": true,
+    "**/build": true,
+    "**/.cache": true,
+  },
+  "cmake.configureSettings": {
+    "LONGLP_DEV_MODE": true,
+    "VCPKG_MANIFEST_FEATURES": "test",
+    "ENABLE_TESTING": true,
+    "CMAKE_EXPORT_COMPILE_COMMANDS": true,
+    "BUILD_SHARED_LIBS": true,
+    "CMAKE_TOOLCHAIN_FILE": "/home/longlp/vcpkg/scripts/buildsystems/vcpkg.cmake"
+  },
+  "cmake.useCMakePresets": "auto",
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/*/**": true,
+    "**/.hg/store/**": true,
+    ".cache/**": true
+  },
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    ".cache/": true
+  },
+  "cmake.ctest.parallelJobs": 1,
+  "python.analysis.typeCheckingMode": "basic",
+}

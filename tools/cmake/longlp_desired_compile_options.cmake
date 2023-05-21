@@ -1,0 +1,310 @@
+# Copyright 2021 Phi-Long Le. All rights reserved.
+# Use of this source code is governed by a MIT license that can be
+# found in the LICENSE file.
+
+#
+# My desired compile options for each compiler
+#
+# * |output_variable|: store the list of compiler flags
+#
+function(longlp_desired_compile_options output_variable)
+  # Current version gcc 12 and C++ 20
+  set(GNU_compile_options_
+      # fixed options this is the one that should be passed to
+      # generate-gcc-warnings.txt
+      -Wall
+      -Wextra
+      -Wpedantic
+      -Wno-c++0x-compat
+      -Wno-c++11-compat
+      -Wno-c++14-compat
+      -Wno-c++17-compat
+      -Wno-c++1z-compat
+      -Wc++11-extensions
+      -Wc++14-extensions
+      -Wc++17-extensions
+      -Wc++20-compat
+      -Wc++20-extensions
+      -Wc++23-extensions
+      -Wc++2a-compat
+      -Waligned-new=all
+      -Warray-bounds=2
+      -Warray-parameter=2
+      -Wattribute-alias=2
+      -Wbidi-chars=ucn
+      -Wcatch-value=3
+      -Wdangling-pointer=2
+      -Wformat=2
+      -Wformat-overflow=2
+      -Wformat-truncation=2
+      -Wimplicit-fallthrough=5
+      -Wnormalized=nfkc
+      -Wplacement-new=2
+      -Wstrict-overflow=5
+      -Wstringop-overflow=4
+      -Wunused-const-variable=2
+      -Wuse-after-free=3
+      -Wnull-dereference # need -fdelete-null-pointer-checks in optimization
+                         # build
+      -Wstack-protector # need -fstack-protector in debug build
+      -Wstrict-aliasing=3 # need -fstrict-aliasing in optimization build
+      -Wno-padded # don't mess with padding size
+      -Wno-aggregate-return # useless warning
+      -Wno-namespaces # useless warning
+      -Wno-templates # useless warning
+      #
+      # Updated options, generated from extract-gcc-warning-options.py
+      #
+      -WNSObject-attribute
+      -Waddress
+      -Waddress-of-packed-member
+      -Waggressive-loop-optimizations
+      -Wanalyzer-double-fclose
+      -Wanalyzer-double-free
+      -Wanalyzer-exposure-through-output-file
+      -Wanalyzer-file-leak
+      -Wanalyzer-free-of-non-heap
+      -Wanalyzer-malloc-leak
+      -Wanalyzer-mismatching-deallocation
+      -Wanalyzer-null-argument
+      -Wanalyzer-null-dereference
+      -Wanalyzer-possible-null-argument
+      -Wanalyzer-possible-null-dereference
+      -Wanalyzer-shift-count-negative
+      -Wanalyzer-shift-count-overflow
+      -Wanalyzer-stale-setjmp-buffer
+      -Wanalyzer-unsafe-call-within-signal-handler
+      -Wanalyzer-use-after-free
+      -Wanalyzer-use-of-pointer-in-stale-stack-frame
+      -Wanalyzer-use-of-uninitialized-value
+      -Wanalyzer-write-to-const
+      -Wanalyzer-write-to-string-literal
+      -Warray-bounds
+      -Warray-compare
+      -Wattribute-warning
+      -Wattributes
+      -Wbool-compare
+      -Wbool-operation
+      -Wbuiltin-declaration-mismatch
+      -Wbuiltin-macro-redefined
+      -Wcannot-profile
+      -Wcast-function-type
+      -Wchar-subscripts
+      -Wclobbered
+      -Wcomment
+      -Wcoverage-invalid-line-number
+      -Wcoverage-mismatch
+      -Wcpp
+      -Wdangling-else
+      -Wdeprecated
+      -Wdeprecated-declarations
+      -Wdiv-by-zero
+      -Wempty-body
+      -Wendif-labels
+      -Wenum-compare
+      -Wenum-conversion
+      -Wexpansion-to-defined
+      -Wformat-contains-nul
+      -Wformat-diag
+      -Wformat-extra-args
+      -Wformat-nonliteral
+      -Wformat-security
+      -Wformat-y2k
+      -Wformat-zero-length
+      -Wframe-address
+      -Wfree-nonheap-object
+      -Wif-not-aligned
+      -Wignored-attributes
+      -Wignored-qualifiers
+      -Winfinite-recursion
+      -Wint-in-bool-context
+      -Wint-to-pointer-cast
+      -Winvalid-memory-model
+      -Wlogical-not-parentheses
+      -Wlto-type-mismatch
+      -Wmain
+      -Wmaybe-uninitialized
+      -Wmemset-elt-size
+      -Wmemset-transposed-args
+      -Wmisleading-indentation
+      -Wmismatched-dealloc
+      -Wmissing-attributes
+      -Wmissing-braces
+      -Wmissing-field-initializers
+      -Wmissing-profile
+      -Wmultistatement-macros
+      -Wnonnull
+      -Wnonnull-compare
+      -Wodr
+      -Wopenmp-simd
+      -Woverflow
+      -Woverlength-strings
+      -Wpacked-not-aligned
+      -Wparentheses
+      -Wpointer-arith
+      -Wpointer-compare
+      -Wpragmas
+      -Wprio-ctor-dtor
+      -Wpsabi
+      -Wrestrict
+      -Wreturn-local-addr
+      -Wreturn-type
+      -Wscalar-storage-order
+      -Wsequence-point
+      -Wshift-count-negative
+      -Wshift-count-overflow
+      -Wsign-compare
+      -Wsizeof-array-argument
+      -Wsizeof-array-div
+      -Wsizeof-pointer-div
+      -Wsizeof-pointer-memaccess
+      -Wstring-compare
+      -Wstringop-overread
+      -Wstringop-truncation
+      -Wswitch
+      -Wswitch-bool
+      -Wswitch-outside-range
+      -Wswitch-unreachable
+      -Wsync-nand
+      -Wtautological-compare
+      -Wtrigraphs
+      -Wtsan
+      -Wtype-limits
+      -Wuninitialized
+      -Wunknown-pragmas
+      -Wunused
+      -Wunused-but-set-parameter
+      -Wunused-but-set-variable
+      -Wunused-function
+      -Wunused-label
+      -Wunused-local-typedefs
+      -Wunused-result
+      -Wunused-value
+      -Wunused-variable
+      -Wuse-after-free
+      -Wvarargs
+      -Wvariadic-macros
+      -Wvla-parameter
+      -Wvolatile-register-var
+      -Wzero-length-bounds
+      -Walloc-zero
+      -Walloca
+      -Wanalyzer-too-complex
+      -Warith-conversion
+      -Wcast-align=strict
+      -Wcast-qual
+      -Wconversion
+      -Wdate-time
+      -Wdisabled-optimization
+      -Wdouble-promotion
+      -Wduplicated-branches
+      -Wduplicated-cond
+      -Wfloat-conversion
+      -Wfloat-equal
+      -Wformat-signedness
+      -Winit-self
+      -Winline
+      -Winvalid-pch
+      -Wlogical-op
+      -Wmissing-declarations
+      -Wmissing-include-dirs
+      -Wmultichar
+      -Wpacked
+      -Wredundant-decls
+      -Wshadow
+      -Wsign-conversion
+      -Wsuggest-attribute=cold
+      -Wsuggest-attribute=const
+      -Wsuggest-attribute=format
+      -Wsuggest-attribute=malloc
+      -Wsuggest-attribute=noreturn
+      -Wsuggest-attribute=pure
+      -Wsuggest-final-methods
+      -Wsuggest-final-types
+      -Wswitch-default
+      -Wswitch-enum
+      -Wtrampolines
+      -Wtrivial-auto-var-init
+      -Wundef
+      -Wvector-operation-performance
+      -Wwrite-strings
+      -Wclass-conversion
+      -Wclass-memaccess
+      -Wcomments
+      -Wconditionally-supported
+      -Wconversion-null
+      -Wctad-maybe-unsupported
+      -Wctor-dtor-privacy
+      -Wdelete-incomplete
+      -Wdelete-non-virtual-dtor
+      -Wdeprecated-copy
+      -Wdeprecated-copy-dtor
+      -Wdeprecated-enum-enum-conversion
+      -Wdeprecated-enum-float-conversion
+      -Weffc++
+      -Wexceptions
+      -Wextra-semi
+      -Winaccessible-base
+      -Winherited-variadic-ctor
+      -Winit-list-lifetime
+      -Winterference-size
+      -Winvalid-imported-macros
+      -Winvalid-offsetof
+      -Wliteral-suffix
+      -Wlong-long
+      -Wmismatched-new-delete
+      -Wmismatched-tags
+      -Wmissing-requires
+      -Wmissing-template-keyword
+      -Wmultiple-inheritance
+      -Wnarrowing
+      -Wnoexcept
+      -Wnoexcept-type
+      -Wnon-template-friend
+      -Wnon-virtual-dtor
+      -Wold-style-cast
+      -Woverloaded-virtual
+      -Wpacked-bitfield-compat
+      -Wpessimizing-move
+      -Wpmf-conversions
+      -Wrange-loop-construct
+      -Wredundant-move
+      -Wredundant-tags
+      -Wregister
+      -Wreorder
+      -Wshift-negative-value
+      -Wsign-promo
+      -Wsized-deallocation
+      -Wstrict-null-sentinel
+      -Wsubobject-linkage
+      -Wsuggest-override
+      -Wsynth
+      -Wterminate
+      -Wuseless-cast
+      -Wvexing-parse
+      -Wvirtual-inheritance
+      -Wvirtual-move-assign
+      -Wvolatile
+      -Wzero-as-null-pointer-constant
+  )
+  set(Clang_compile_options_
+      -Weverything -Wno-pre-c++20-compat -Wno-c++20-compat -Wno-c++98-compat
+      -Wno-c++98-compat-pedantic -Wno-padded
+  )
+  set(MSVC_compile_options_ /c /EHsc /permissive-)
+  if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+      list(APPEND GNU_compile_options_ -fstack-protector -fanalyzer)
+    elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+      list(APPEND GNU_compile_options_ -fstrict-aliasing
+           -fdelete-null-pointer-checks
+      )
+    endif()
+  endif()
+  if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    set(${output_variable}
+        ${${CMAKE_CXX_COMPILER_ID}_compile_options_}
+        PARENT_SCOPE
+    )
+  endif()
+endfunction()

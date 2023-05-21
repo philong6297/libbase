@@ -1,0 +1,5 @@
+Implement these things:
+- SkipList and concurrent skip list, https://github.com/facebook/folly/blob/main/folly/docs/Overview.md#concurrentskiplisth
+- Add optional_ref
+  - https://codereview.stackexchange.com/questions/159836/an-optional-reft
+  - https://source.chromium.org/chromium/chromium/src/+/main:base/types/optional_ref.h

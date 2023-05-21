@@ -30,3 +30,14 @@
 *.exe
 *.out
 *.app
+
+/.idea/
+/.vs/
+/.vscode/
+/build/
+cmake-build-*/
+/prefix/
+**/.DS_Store
+CMakeLists.txt.user
+CMakeUserPresets.json
+/.cache/
