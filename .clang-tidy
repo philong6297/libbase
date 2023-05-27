@@ -52,3 +52,7 @@ CheckOptions:
     value: true
   - key: misc-non-private-member-variables-in-classes.IgnorePublicMemberVariables
     value: true
+  - key: readability-identifier-length.IgnoredVariableNames
+    value: to
+  - key: readability-identifier-length.IgnoredParameterNames
+    value: to

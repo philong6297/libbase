@@ -11,15 +11,25 @@ include(GoogleTest)
 
 # ---- Tests ----
 
-set(test_cases auto_reset no_destructor assert types/pass_key
-               types/strong_alias types/id_type
+set(test_cases
+    auto_reset
+    no_destructor
+    assert
+    types/pass_key
+    types/strong_alias
+    types/id_type
+    containers/vector_buffer
 )
 list(TRANSFORM test_cases APPEND .test.cpp)
 
+set(test_utils copy_only_int.h copy_only_int.cpp move_only_int.h)
+list(TRANSFORM test_utils PREPEND test_utils/)
+
 add_executable(base_test)
-target_sources(base_test PRIVATE ${test_cases})
+target_sources(base_test PRIVATE ${test_cases} ${test_utils})
 target_link_libraries(base_test PRIVATE base::base GTest::gtest_main)
 target_compile_features(base_test PRIVATE cxx_std_20)
+target_include_directories(base_test PRIVATE ${PROJECT_SOURCE_DIR}/test)
 if(LONGLP_IS_MASTER_PROJECT AND LONGLP_DEV_MODE)
   set(options ${LONGLP_DESIRED_COMPILE_OPTIONS})
   if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
