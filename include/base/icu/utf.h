@@ -96,6 +96,18 @@ namespace internal {
     U16_APPEND_UNSAFE(src, offset, codepoint);
   }
 
+  // See
+  // https://unicode-org.github.io/icu-docs/apidoc/released/icu4c/utf16_8h.html#a35f04f1f6e7f0965a66b5268eec29b99
+  BASE_EXPORT LONGLP_ALWAYS_INLINE auto U16IsSingle(char16_t codeunit) -> bool {
+    return U16_IS_SINGLE(codeunit);
+  }
+
+  // See
+  // https://unicode-org.github.io/icu-docs/apidoc/released/icu4c/utf16_8h.html#ace839ae31a801fd9c53fa67c5f8b9144
+  BASE_EXPORT LONGLP_ALWAYS_INLINE auto U16IsLead(char16_t codeunit) -> bool {
+    return U16_IS_LEAD(codeunit);
+  }
+
   LONGLP_DIAGNOSTIC_POP
 
 // Any used macro should be undefined to prevent the usage of these macros in
@@ -111,9 +123,11 @@ namespace internal {
 #undef U16_GET_SUPPLEMENTARY
 #undef U16_LENGTH
 #undef U16_APPEND_UNSAFE
+#undef U16_IS_SINGLE
+#undef U16_IS_LEAD
 }    // namespace internal
 
-using U32CodePoint = StrongAlias<class LongLPU32CodePoint, UChar32>;
+using CodePoint = StrongAlias<class LongLPCodePoint, UChar32>;
 }    // namespace longlp::base::icu
 
 #endif    // LONGLP_INCLUDE_BASE_ICU_UTF_H_

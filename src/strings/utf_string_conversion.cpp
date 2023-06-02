@@ -4,15 +4,19 @@
 
 #include "base/strings/utf_string_conversion.h"
 
+#include <bit>
 #include <concepts>
 #include <type_traits>
 
 #include "base/icu/utf.h"
 
 namespace longlp::base {
+// NOLINTBEGIN(*-magic-numbers)
 namespace {
 
-  constexpr icu::U32CodePoint kErrorCodePoint(0xFFFD);
+  // NOLINTBEGIN(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+
+  constexpr icu::CodePoint kErrorCodePoint(0xFFFD);
 
   // Size coefficient ----------------------------------------------------------
   // The maximum number of codeunits in the destination encoding corresponding
@@ -81,26 +85,35 @@ namespace {
   // (i.e. bool, char, int or their extended versions) and is of the correct
   // size.
   template <typename Char, size_t N>
-  using EnableIfBitsAre = std::enable_if_t<
-    std::is_integral<Char>::value && CHAR_BIT * sizeof(Char) == N,
-    bool>;
+  concept ValidCharType = std::integral<Char> && CHAR_BIT * sizeof(Char) == N;
 
-  template <typename Char, EnableIfBitsAre<Char, 8> = true>
-  void
-  UnicodeAppendUnsafe(Char* out, size_t* size, base_icu::UChar32 code_point) {
-    CBU8_APPEND_UNSAFE(reinterpret_cast<uint8_t*>(out), *size, code_point);
+  template <std::integral Char>
+  requires ValidCharType<Char, 8U>
+  void UnicodeAppendUnsafe(
+    Char* out,
+    size_t& size,
+    base::icu::CodePoint code_point) {
+    icu::internal::
+      U8AppendUnsafe(std::bit_cast<uint8_t*>(out), size, code_point);
   }
 
-  template <typename Char, EnableIfBitsAre<Char, 16> = true>
-  void
-  UnicodeAppendUnsafe(Char* out, size_t* size, base_icu::UChar32 code_point) {
-    CBU16_APPEND_UNSAFE(out, *size, code_point);
+  template <typename Char>
+  requires ValidCharType<Char, 16U>
+  void UnicodeAppendUnsafe(
+    Char* out,
+    size_t& size,
+    base::icu::CodePoint code_point) {
+    icu::internal::U16AppendUnsafe(out, size, code_point);
   }
 
-  template <typename Char, EnableIfBitsAre<Char, 32> = true>
-  void
-  UnicodeAppendUnsafe(Char* out, size_t* size, base_icu::UChar32 code_point) {
-    out[(*size)++] = static_cast<Char>(code_point);
+  template <typename Char>
+  requires ValidCharType<Char, 32U>
+  void UnicodeAppendUnsafe(
+    Char* out,
+    size_t& size,
+    base::icu::CodePoint code_point) {
+    out[size] = static_cast<Char>(code_point);
+    ++size;
   }
 
   // DoUTFConversion
@@ -109,16 +122,17 @@ namespace {
   // enough room for the converted text.
 
   template <typename DestChar>
-  bool DoUTFConversion(
+  auto DoUTFConversion(
     const char* src,
     size_t src_len,
     DestChar* dest,
-    size_t* dest_len) {
+    size_t* dest_len) -> bool {
     bool success = true;
 
     for (size_t i = 0; i < src_len;) {
-      base_icu::UChar32 code_point;
-      CBU8_NEXT(reinterpret_cast<const uint8_t*>(src), i, src_len, code_point);
+      base::icu::CodePoint code_point;
+      icu::internal::
+        U8Next(std::bit_cast<const uint8_t*>(src), i, src_len, *code_point);
 
       if (!IsValidCodepoint(code_point)) {
         success    = false;
@@ -132,30 +146,31 @@ namespace {
   }
 
   template <typename DestChar>
-  bool DoUTFConversion(
+  auto DoUTFConversion(
     const char16_t* src,
     size_t src_len,
     DestChar* dest,
-    size_t* dest_len) {
-    bool success           = true;
+    size_t* dest_len) -> bool {
+    bool success             = true;
 
-    auto ConvertSingleChar = [&success](char16_t in) -> base_icu::UChar32 {
-      if (!CBU16_IS_SINGLE(in) || !IsValidCodepoint(in)) {
+    auto convert_single_char = [&success](char16_t input) -> icu::CodePoint {
+      if (!icu::internal::U16IsSingle(input) || !IsValidCodepoint(input)) {
         success = false;
         return kErrorCodePoint;
       }
-      return in;
+      return icu::CodePoint(input);
     };
 
-    size_t i = 0;
+    size_t i = 0U;
 
     // Always have another symbol in order to avoid checking boundaries in the
     // middle of the surrogate pair.
     while (i + 1 < src_len) {
-      base_icu::UChar32 code_point;
+      base::icu::CodePoint code_point;
 
-      if (CBU16_IS_LEAD(src[i]) && CBU16_IS_TRAIL(src[i + 1])) {
-        code_point = CBU16_GET_SUPPLEMENTARY(src[i], src[i + 1]);
+      if (icu::internal::U16IsLead(src[i]) &&
+          icu::internal::U16IsTrail(src[i + 1])) {
+        *code_point = icu::internal::U16GetSupplementary(src[i], src[i + 1]);
         if (!IsValidCodepoint(code_point)) {
           code_point = kErrorCodePoint;
           success    = false;
@@ -163,7 +178,7 @@ namespace {
         i += 2;
       }
       else {
-        code_point = ConvertSingleChar(src[i]);
+        code_point = convert_single_char(src[i]);
         ++i;
       }
 
@@ -171,7 +186,7 @@ namespace {
     }
 
     if (i < src_len) {
-      UnicodeAppendUnsafe(dest, dest_len, ConvertSingleChar(src[i]));
+      UnicodeAppendUnsafe(dest, dest_len, convert_single_char(src[i]));
     }
 
     return success;
@@ -188,7 +203,7 @@ namespace {
     bool success = true;
 
     for (size_t i = 0; i < src_len; ++i) {
-      auto code_point = static_cast<base_icu::UChar32>(src[i]);
+      auto code_point = static_cast<base::icu::CodePoint>(src[i]);
 
       if (!IsValidCodepoint(code_point)) {
         success    = false;
@@ -234,6 +249,8 @@ namespace {
 
     return res;
   }
+
+  // NOLINTEND(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 }    // namespace
 
 // ASCII To Others
@@ -261,4 +278,6 @@ auto UTF32ToUTF8(UTF32StringView utf32, UTF8String& utf8_output) -> bool {}
 auto UTF32ToUTF16(UTF32StringView utf32, UTF16String& utf16_output) -> bool {}
 
 auto UTF32ToASCII(UTF32StringView utf32, ASCIIString& ascii_output) -> bool {}
+
+// NOLINTEND(*-magic-numbers)
 }    // namespace longlp::base

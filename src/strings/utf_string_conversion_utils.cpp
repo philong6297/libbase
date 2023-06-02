@@ -14,7 +14,7 @@ namespace longlp::base {
 auto ReadUnicodeCharacter(
   const std::string_view utf8_src,
   size_t& char_index,
-  icu::U32CodePoint& code_point_out) -> bool {
+  icu::CodePoint& code_point_out) -> bool {
   icu::internal::U8Next(
     std::bit_cast<const uint8_t*>(utf8_src.data()),
     char_index,
@@ -32,7 +32,7 @@ auto ReadUnicodeCharacter(
 auto ReadUnicodeCharacter(
   const std::u16string_view utf16_src,
   size_t& char_index,
-  icu::U32CodePoint& code_point_out) -> bool {
+  icu::CodePoint& code_point_out) -> bool {
   if (icu::internal::U16IsSurrogate(utf16_src[char_index])) {
     if (
       !icu::internal::U16IsSurrogateLead(utf16_src[char_index]) ||
@@ -58,10 +58,10 @@ auto ReadUnicodeCharacter(
 auto ReadUnicodeCharacter(
   const std::u32string_view utf32_src,
   size_t& char_index,
-  icu::U32CodePoint& code_point_out) -> bool {
+  icu::CodePoint& code_point_out) -> bool {
   // Conversion is easy since the source is 32-bit.
   *code_point_out =
-    static_cast<icu::U32CodePoint::UnderlyingType>(utf32_src[char_index]);
+    static_cast<icu::CodePoint::UnderlyingType>(utf32_src[char_index]);
 
   // Validate the value.
   return IsValidCodepoint(code_point_out);
@@ -70,7 +70,7 @@ auto ReadUnicodeCharacter(
 // WriteUnicodeCharacter -------------------------------------------------------
 
 auto AppendUnicodeCharacter(
-  const icu::U32CodePoint code_point,
+  const icu::CodePoint code_point,
   std::string& utf8_output) -> size_t {
   if (code_point.value() >= 0 && code_point.value() <= 0x7f) {
     // Fast path the common case of one byte.
@@ -95,7 +95,7 @@ auto AppendUnicodeCharacter(
 }
 
 auto AppendUnicodeCharacter(
-  const icu::U32CodePoint code_point,
+  const icu::CodePoint code_point,
   std::u16string& utf16_output) -> size_t {
   if (icu::internal::U16Length(code_point.value()) == 1) {
     // The code point is in the Basic Multilingual Plane (BMP).

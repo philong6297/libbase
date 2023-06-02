@@ -25,6 +25,8 @@ namespace {
   // using internal::U16GetSupplementary;    // No test found
   using internal::U16IsSurrogate;
   // using internal::U16IsSurrogateLead;    // No test found
+  using internal::U16IsLead;
+  using internal::U16IsSingle;
   using internal::U16IsTrail;
   using internal::U16Length;
 }    // namespace
@@ -52,25 +54,21 @@ TEST(UTF16Test, TestCodeUnitValues) {
   };
   // clang-format on
 
-  // Keep U16_IS_SINGLE, U16_IS_LEAD for testing purpose
   for (size_t i = 0U; i < kCodeUnit.size(); ++i) {
     const auto c = kCodeUnit.at(i);
     if (i < 4) {
       EXPECT_TRUE(
-        U16_IS_SINGLE(c) && !U16_IS_LEAD(c) && !U16IsTrail(c) &&
-        !U16IsSurrogate(c))
+        U16IsSingle(c) && !U16IsLead(c) && !U16IsTrail(c) && !U16IsSurrogate(c))
         << fmt::sprintf("ERROR: %x is a single character\n", c);
     }
     if (i >= 4 && i < 8) {
       EXPECT_TRUE(
-        !U16_IS_SINGLE(c) && U16_IS_LEAD(c) && !U16IsTrail(c) &&
-        U16IsSurrogate(c))
+        !U16IsSingle(c) && U16IsLead(c) && !U16IsTrail(c) && U16IsSurrogate(c))
         << fmt::sprintf("ERROR: %x is a first surrogate\n", c);
     }
     if (i >= 8 && i < 12) {
       EXPECT_TRUE(
-        !U16_IS_SINGLE(c) && !U16_IS_LEAD(c) && U16IsTrail(c) &&
-        U16IsSurrogate(c))
+        !U16IsSingle(c) && !U16IsLead(c) && U16IsTrail(c) && U16IsSurrogate(c))
         << fmt::sprintf("ERROR: %x is a second surrogate\n", c);
     }
   }
@@ -111,7 +109,7 @@ TEST(UTF16Test, TestCharLength) {
 // https://github.com/unicode-org/icu/blob/main/icu4c/source/test/cintltst/cucdtst.c
 TEST(UTF16Test, TestCodePoint) {
   // clang-format off
-  const std::array<UChar32,32> kCodePoint = {
+  static constexpr std::array<UChar32,32> kCodePoint = {
     // surrogate, notvalid(codepoint), not a UnicodeChar, not Error
     0xd800,
     0xdbff,
