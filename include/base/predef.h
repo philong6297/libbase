@@ -29,7 +29,7 @@
 #endif
 
 #if !defined(LONGLP_OS_LINUX) && !defined(LONGLP_OS_WINDOWS)
-#  error "Currently, libbase is only support Windows, Linux and MacOS"
+#  error "Currently, libbase is only support Windows and Linux"
 #endif
 
 #if defined(BOOST_COMP_CLANG_AVAILABLE)
@@ -59,6 +59,18 @@
   !defined(LONGLP_COMPILER_MSVC)
 #  error \
     "Currently, libbase is only support compiler GNU/GCC, LLVM/Clang and MSVC"
+#endif
+
+#if defined(BOOST_ARCH_X86_AVAILABLE)
+#  define LONGLP_ARCH_CPU_X86_FAMILY
+#else
+#  undef LONGLP_ARCH_CPU_X86_FAMILY
+#endif
+
+#if defined(__aarch64__) || defined(_M_ARM64)
+#  define LONGLP_ARCH_CPU_ARM64
+#else
+#  undef LONGLP_ARCH_CPU_ARM64
 #endif
 
 #endif    // LONGLP_INCLUDE_BASE_PREDEF_H_

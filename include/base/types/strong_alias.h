@@ -83,9 +83,11 @@ namespace internal {
 //   using StrongAlias<Tag, bool> instead of a bare bool.
 // - IdType<...> which provides helpers for specializing StrongAlias to be
 //   used as an id.
-template <typename TagType, typename UnderlyingType>
+template <typename TagType, typename T>
 class StrongAlias {
  public:
+  using UnderlyingType = T;
+
   // the default inilization behavior of StrongAlias should be the same as
   // UnderlyingType so we should not member-init in default-constructor
   LONGLP_DIAGNOSTIC_PUSH

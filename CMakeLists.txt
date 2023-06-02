@@ -115,6 +115,7 @@ endif()
 
 find_package(fmt 9 CONFIG REQUIRED)
 find_package(Microsoft.GSL 4 CONFIG REQUIRED)
+find_package(ICU 72 REQUIRED COMPONENTS i18n uc)
 # cmake-format: off
 find_package(
   Boost 1.82 REQUIRED
@@ -125,12 +126,28 @@ find_package(
 )
 # cmake-format: on
 
-set(BASE_PUBLIC_HEADERS auto_reset.h base_export.h assert.h no_destructor.h
-                        predef.h
+set(BASE_PUBLIC_HEADERS
+    # /
+    assert.h
+    auto_reset.h
+    base_export.h
+    compiler_specific.h
+    immediate_crash.h
+    macros.h
+    no_destructor.h
+    predef.h
+    # containers/
+    containers/vector_buffer.h
+    # types/
+    types/id_type.h
+    types/pass_key.h
+    types/strong_alias.h
 )
 list(TRANSFORM BASE_PUBLIC_HEADERS PREPEND include/base/)
 
-set(BASE_SOURCES base.cpp)
+set(BASE_SOURCES # glob
+    base.cpp
+)
 list(TRANSFORM BASE_SOURCES PREPEND src/)
 
 add_library(base)
@@ -139,7 +156,9 @@ target_sources(base PRIVATE ${BASE_SOURCES} ${BASE_PUBLIC_HEADERS})
 target_compile_features(base PUBLIC cxx_std_20)
 # TODO(longlp, vcpkg-issue): vcpkg did not provide target for Boost.Predef and
 # Boost.Config
-target_link_libraries(base PRIVATE Microsoft.GSL::GSL fmt::fmt Boost::boost)
+target_link_libraries(
+  base PUBLIC Microsoft.GSL::GSL fmt::fmt Boost::boost ICU::i18n ICU::uc
+)
 
 target_include_directories(
   base ${LONGLP_SYSTEM_HEADER_ATTRIBUTE}

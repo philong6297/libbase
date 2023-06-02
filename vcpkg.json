@@ -6,14 +6,16 @@
     "fmt",
     "ms-gsl",
     "boost-predef",
-    "boost-config"
+    "boost-config",
+    "icu"
   ],
   "default-features": [],
   "features": {
     "test": {
       "description": "Dependencies for testing",
       "dependencies": [
-        "gtest"
+        "gtest",
+        "boost-dll"
       ]
     }
   },
