@@ -256,7 +256,7 @@ TEST(UTF8Test, TestAppend) {
 // Removed other macro functions since our API only supports U8_NEXT atm
 TEST(UTF8Test, TestSurrogates) {
   // clang-format off
-    static constexpr std::array<uint8_t, 18> b = {
+    static constexpr std::array<uint8_t, 18> kB = {
         0xc3, 0x9f,             //  00DF
         0xed, 0x9f, 0xbf,       //  D7FF
         0xed, 0xa0, 0x81,       //  D801
@@ -267,14 +267,14 @@ TEST(UTF8Test, TestSurrogates) {
   // clang-format on
 
   // Keep U8_NEXT_UNSAFE, U_IS_SURROGATE for testing purpose
-  for (size_t i = 0U; i < b.size();) {
+  for (size_t i = 0U; i < kB.size();) {
     auto offset_unsafe       = i;
     UChar32 codepoint_unsafe = 0;
-    U8_NEXT_UNSAFE(b, offset_unsafe, codepoint_unsafe);
+    U8_NEXT_UNSAFE(kB, offset_unsafe, codepoint_unsafe);
 
     auto offset_safe       = i;
     UChar32 codepoint_safe = 0;
-    U8Next(b.data(), offset_safe, b.size(), codepoint_safe);
+    U8Next(kB.data(), offset_safe, kB.size(), codepoint_safe);
 
     const auto is_surrogate = U_IS_SURROGATE(codepoint_unsafe);
 

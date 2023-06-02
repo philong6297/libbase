@@ -142,6 +142,8 @@ set(BASE_PUBLIC_HEADERS
     types/id_type.h
     types/pass_key.h
     types/strong_alias.h
+    # icu
+    icu/utf.h
 )
 list(TRANSFORM BASE_PUBLIC_HEADERS PREPEND include/base/)
 

@@ -27,9 +27,8 @@ namespace internal {
 
   // See
   // https://unicode-org.github.io/icu-docs/apidoc/released/icu4c/utf8_8h.html#aa2298b48749d9f45772c8f5a6885464a
-  BASE_EXPORT LONGLP_ALWAYS_INLINE constexpr auto kU8MaxLength = U8_MAX_LENGTH;
-  BASE_EXPORT LONGLP_ALWAYS_INLINE constexpr auto kU16MaxLength =
-    U16_MAX_LENGTH;
+  LONGLP_ALWAYS_INLINE constexpr auto kU8MaxLength  = U8_MAX_LENGTH;
+  LONGLP_ALWAYS_INLINE constexpr auto kU16MaxLength = U16_MAX_LENGTH;
 
   // See
   // https://unicode-org.github.io/icu-docs/apidoc/released/icu4c/utf8_8h.html#a57f3e5429ae4edb27a42367c627aa482
