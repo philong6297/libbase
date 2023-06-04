@@ -44,13 +44,17 @@ set(test_cases
     containers/vector_buffer
     # strings/
     strings/utf_string_conversion_utils
+    strings/string_utils
     # icu/
     icu/utf.utf8
     icu/utf.utf16
 )
 list(TRANSFORM test_cases APPEND .test.cpp)
 
-set(test_utils copy_only_int.h copy_only_int.cpp move_only_int.h)
+set(test_utils
+    copy_only_int.h copy_only_int.cpp move_only_int.h
+    gtest_fix_u8string_comparison.h gtest_fix_u8string_comparison.cpp
+)
 list(TRANSFORM test_utils PREPEND test_utils/)
 
 add_executable(base_test)

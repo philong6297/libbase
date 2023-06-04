@@ -3,7 +3,8 @@ Checks: >
   -cppcoreguidelines-pro-type-vararg,
   -hicpp-vararg,
   -*-magic-numbers,
-  -misc-non-private-member-variables-in-classes
+  -misc-non-private-member-variables-in-classes,
+  -cppcoreguidelines-macro-usage
 InheritParentConfig: true
 CheckOptions:
   - key: hicpp-signed-bitwise.IgnorePositiveIntegerLiterals

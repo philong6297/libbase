@@ -144,11 +144,19 @@ set(BASE_PUBLIC_HEADERS
     types/strong_alias.h
     # icu
     icu/utf.h
+    # strings/
+    strings/utf_string_conversion_utils.h
+    strings/string_util_internal.h
+    strings/string_utils.h
+    strings/typedefs.h
 )
 list(TRANSFORM BASE_PUBLIC_HEADERS PREPEND include/base/)
 
-set(BASE_SOURCES # glob
+set(BASE_SOURCES
+    # /
     base.cpp
+    # strings/
+    strings/string_utils.cpp strings/utf_string_conversion_utils.cpp
 )
 list(TRANSFORM BASE_SOURCES PREPEND src/)
 

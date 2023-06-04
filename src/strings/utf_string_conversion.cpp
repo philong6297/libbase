@@ -5,10 +5,12 @@
 #include "base/strings/utf_string_conversion.h"
 
 #include <bit>
+#include <climits>
 #include <concepts>
 #include <type_traits>
 
 #include "base/icu/utf.h"
+#include "base/strings/utf_string_conversion_utils.h"
 
 namespace longlp::base {
 // NOLINTBEGIN(*-magic-numbers)
@@ -21,11 +23,8 @@ namespace {
   // Size coefficient ----------------------------------------------------------
   // The maximum number of codeunits in the destination encoding corresponding
   // to one codeunit in the source encoding.
-  template <typename SrcChar, typename DestChar>
+  template <CharTraits SrcChar, CharTraits DestChar>
   consteval auto SizeCoefficient() -> int32_t {
-    using SrcCharType  = std::decay_t<SrcChar>;
-    using DestCharType = std::decay_t<DestChar>;
-
     // clang-format off
 
     //  1 Character ~ 1 Codepoints
@@ -49,22 +48,19 @@ namespace {
 
     // UTF-32 to UTF-16
     if constexpr (
-      std::same_as<SrcCharType, UTF32Char> &&
-      std::same_as<DestCharType, UTF16Char>) {
+      std::same_as<SrcChar, CharUTF32> && std::same_as<DestChar, CharUTF16>) {
       return 2;
     }
 
     // UTF-32 to UTF-8
     if constexpr (
-      std::same_as<SrcCharType, UTF32Char> &&
-      std::same_as<DestCharType, UTF8Char>) {
+      std::same_as<SrcChar, CharUTF32> && std::same_as<DestChar, CharUTF8>) {
       return 4;
     }
 
     // UTF-16 to UTF-8
     if constexpr (
-      std::same_as<SrcCharType, UTF32Char> &&
-      std::same_as<DestCharType, UTF8Char>) {
+      std::same_as<SrcChar, CharUTF32> && std::same_as<DestChar, CharUTF8>) {
       return 3;
     }
 
@@ -84,11 +80,13 @@ namespace {
   // Convenience typedef that checks whether the passed in type is integral
   // (i.e. bool, char, int or their extended versions) and is of the correct
   // size.
-  template <typename Char, size_t N>
-  concept ValidCharType = std::integral<Char> && CHAR_BIT * sizeof(Char) == N;
+  template <CharTraits Char>
+  consteval auto SizeInBits() -> size_t {
+    return CHAR_BIT * sizeof(Char);
+  }
 
-  template <std::integral Char>
-  requires ValidCharType<Char, 8U>
+  template <CharTraits Char>
+  requires(SizeInBits<Char>() == 8U)
   void UnicodeAppendUnsafe(
     Char* out,
     size_t& size,
@@ -97,8 +95,8 @@ namespace {
       U8AppendUnsafe(std::bit_cast<uint8_t*>(out), size, code_point);
   }
 
-  template <typename Char>
-  requires ValidCharType<Char, 16U>
+  template <CharTraits Char>
+  requires(SizeInBits<Char>() == 16U)
   void UnicodeAppendUnsafe(
     Char* out,
     size_t& size,
@@ -106,8 +104,8 @@ namespace {
     icu::internal::U16AppendUnsafe(out, size, code_point);
   }
 
-  template <typename Char>
-  requires ValidCharType<Char, 32U>
+  template <CharTraits Char>
+  requires(SizeInBits<Char>() == 32U)
   void UnicodeAppendUnsafe(
     Char* out,
     size_t& size,
@@ -121,51 +119,58 @@ namespace {
   // UTFConversion specialized for different Src encodings. dest has to have
   // enough room for the converted text.
 
-  template <typename DestChar>
+  template <CharTraits DestChar>
   auto DoUTFConversion(
-    const char* src,
-    size_t src_len,
-    DestChar* dest,
-    size_t* dest_len) -> bool {
+    const StringViewUTF8 src,
+    std::basic_string<DestChar>& dest,
+    const size_t dest_offset) -> bool {
     bool success = true;
+    dest.reserve(dest_offset + src.size());
 
-    for (size_t i = 0; i < src_len;) {
+    auto start_offset = dest_offset;
+
+    for (size_t i = 0; i < src.size();) {
       base::icu::CodePoint code_point;
-      icu::internal::
-        U8Next(std::bit_cast<const uint8_t*>(src), i, src_len, *code_point);
+      icu::internal::U8Next(
+        std::bit_cast<const uint8_t*>(src.data()),
+        i,
+        static_cast<int32_t>(src.size()),
+        *code_point);
 
       if (!IsValidCodepoint(code_point)) {
         success    = false;
         code_point = kErrorCodePoint;
       }
 
-      UnicodeAppendUnsafe(dest, dest_len, code_point);
+      UnicodeAppendUnsafe(dest, start_offset, code_point);
     }
 
     return success;
   }
 
-  template <typename DestChar>
+  template <CharTraits DestChar>
   auto DoUTFConversion(
-    const char16_t* src,
-    size_t src_len,
-    DestChar* dest,
-    size_t* dest_len) -> bool {
-    bool success             = true;
+    const StringViewUTF16 src,
+    std::basic_string<DestChar>& dest,
+    const size_t dest_offset) -> bool {
+    bool success = true;
+    dest.reserve(dest_offset + src.size());
 
     auto convert_single_char = [&success](char16_t input) -> icu::CodePoint {
-      if (!icu::internal::U16IsSingle(input) || !IsValidCodepoint(input)) {
-        success = false;
-        return kErrorCodePoint;
+      icu::CodePoint code_point(input);
+      if (!icu::internal::U16IsSingle(input) || !IsValidCodepoint(code_point)) {
+        success    = false;
+        code_point = kErrorCodePoint;
       }
-      return icu::CodePoint(input);
+      return code_point;
     };
 
-    size_t i = 0U;
+    size_t i          = 0U;
+    auto start_offset = dest_offset;
 
     // Always have another symbol in order to avoid checking boundaries in the
     // middle of the surrogate pair.
-    while (i + 1 < src_len) {
+    while (i + 1 < src.size()) {
       base::icu::CodePoint code_point;
 
       if (icu::internal::U16IsLead(src[i]) &&
@@ -182,41 +187,38 @@ namespace {
         ++i;
       }
 
-      UnicodeAppendUnsafe(dest, dest_len, code_point);
+      UnicodeAppendUnsafe(dest, start_offset, code_point);
     }
 
-    if (i < src_len) {
-      UnicodeAppendUnsafe(dest, dest_len, convert_single_char(src[i]));
+    if (i < src.size()) {
+      UnicodeAppendUnsafe(dest, start_offset, convert_single_char(src[i]));
     }
 
     return success;
   }
 
-#if defined(WCHAR_T_IS_UTF32)
-
-  template <typename DestChar>
-  bool DoUTFConversion(
-    const wchar_t* src,
-    size_t src_len,
-    DestChar* dest,
-    size_t* dest_len) {
+  template <CharTraits DestChar>
+  auto DoUTFConversion(
+    const StringViewUTF32 src,
+    std::basic_string<DestChar>& dest,
+    const size_t dest_offset) -> bool {
     bool success = true;
+    dest.reserve(dest_offset + src.size());
 
-    for (size_t i = 0; i < src_len; ++i) {
-      auto code_point = static_cast<base::icu::CodePoint>(src[i]);
+    auto start_offset = dest_offset;
+    for (CharUTF32 character : src) {
+      icu::CodePoint code_point(static_cast<UChar32>(character));
 
       if (!IsValidCodepoint(code_point)) {
         success    = false;
         code_point = kErrorCodePoint;
       }
 
-      UnicodeAppendUnsafe(dest, dest_len, code_point);
+      UnicodeAppendUnsafe(dest, start_offset, code_point);
     }
 
     return success;
   }
-
-#endif    // defined(WCHAR_T_IS_UTF32)
 
   // UTFConversion
   // -------------------------------------------------------------- Function
@@ -254,30 +256,30 @@ namespace {
 }    // namespace
 
 // ASCII To Others
-auto ASCIIToUTF16(ASCIIStringView ascii, UTF16String& utf16_output) -> bool {
+auto ASCIIToUTF16(StringViewASCII ascii, StringUTF16& utf16_output) -> bool {
   utf16_output.reserve(ascii.size());
   utf16_output = {ascii.begin(), ascii.end()};
   return true;
 }
 
-auto ASCIIToUTF32(ASCIIStringView ascii, UTF32String& utf32_output) -> bool {
+auto ASCIIToUTF32(StringViewASCII ascii, StringUTF32& utf32_output) -> bool {
   utf32_output.reserve(ascii.size());
   utf32_output = {ascii.begin(), ascii.end()};
   return true;
 }
 
-auto ASCIIToUTF8(ASCIIStringView ascii, UTF8String& utf8_output) -> bool {
+auto ASCIIToUTF8(StringViewASCII ascii, StringUTF8& utf8_output) -> bool {
   utf8_output.reserve(ascii.size());
   utf8_output = {ascii.begin(), ascii.end()};
   return true;
 }
 
 // UTF32 To Others
-auto UTF32ToUTF8(UTF32StringView utf32, UTF8String& utf8_output) -> bool {}
+auto UTF32ToUTF8(StringViewUTF32 utf32, StringUTF8& utf8_output) -> bool {}
 
-auto UTF32ToUTF16(UTF32StringView utf32, UTF16String& utf16_output) -> bool {}
+auto UTF32ToUTF16(StringViewUTF32 utf32, StringUTF16& utf16_output) -> bool {}
 
-auto UTF32ToASCII(UTF32StringView utf32, ASCIIString& ascii_output) -> bool {}
+auto UTF32ToASCII(StringViewUTF32 utf32, StringASCII& ascii_output) -> bool {}
 
 // NOLINTEND(*-magic-numbers)
 }    // namespace longlp::base

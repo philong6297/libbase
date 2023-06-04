@@ -12,7 +12,7 @@ namespace longlp::base {
 // ReadUnicodeCharacter --------------------------------------------------------
 
 auto ReadUnicodeCharacter(
-  const std::string_view utf8_src,
+  const StringViewUTF8 utf8_src,
   size_t& char_index,
   icu::CodePoint& code_point_out) -> bool {
   icu::internal::U8Next(
@@ -30,7 +30,7 @@ auto ReadUnicodeCharacter(
 }
 
 auto ReadUnicodeCharacter(
-  const std::u16string_view utf16_src,
+  const StringViewUTF16 utf16_src,
   size_t& char_index,
   icu::CodePoint& code_point_out) -> bool {
   if (icu::internal::U16IsSurrogate(utf16_src[char_index])) {
@@ -56,7 +56,7 @@ auto ReadUnicodeCharacter(
 }
 
 auto ReadUnicodeCharacter(
-  const std::u32string_view utf32_src,
+  const StringViewUTF32 utf32_src,
   size_t& char_index,
   icu::CodePoint& code_point_out) -> bool {
   // Conversion is easy since the source is 32-bit.
@@ -71,10 +71,10 @@ auto ReadUnicodeCharacter(
 
 auto AppendUnicodeCharacter(
   const icu::CodePoint code_point,
-  std::string& utf8_output) -> size_t {
+  StringUTF8& utf8_output) -> size_t {
   if (code_point.value() >= 0 && code_point.value() <= 0x7f) {
     // Fast path the common case of one byte.
-    utf8_output.push_back(static_cast<char>(code_point.value()));
+    utf8_output.push_back(static_cast<CharUTF8>(code_point.value()));
     return 1;
   }
 
@@ -96,10 +96,10 @@ auto AppendUnicodeCharacter(
 
 auto AppendUnicodeCharacter(
   const icu::CodePoint code_point,
-  std::u16string& utf16_output) -> size_t {
+  StringUTF16& utf16_output) -> size_t {
   if (icu::internal::U16Length(code_point.value()) == 1) {
     // The code point is in the Basic Multilingual Plane (BMP).
-    utf16_output.push_back(static_cast<char16_t>(code_point.value()));
+    utf16_output.push_back(static_cast<CharUTF16>(code_point.value()));
     return 1;
   }
   // Non-BMP characters use a double-character encoding.
@@ -112,10 +112,10 @@ auto AppendUnicodeCharacter(
 
 // Generalized Unicode converter -----------------------------------------------
 
-template <typename CharT>
+template <CharTraits CharT>
 void PrepareForUTF8Output(
   const std::basic_string_view<CharT> src,
-  std::string& utf8_output) {
+  StringUTF8& utf8_output) {
   utf8_output.clear();
   if (src.empty()) {
     return;
@@ -131,18 +131,18 @@ void PrepareForUTF8Output(
 }
 
 // Instantiate versions we know callers will need.
-template void PrepareForUTF8Output(const std::u32string_view, std::string&);
-template void PrepareForUTF8Output(const std::u16string_view, std::string&);
+template void PrepareForUTF8Output(const StringViewUTF32, StringUTF8&);
+template void PrepareForUTF8Output(const StringViewUTF16, StringUTF8&);
 
-template <typename CharT>
+template <CharTraits CharT>
 void PrepareForUTF16Or32Output(
-  std::string_view utf8_src,
+  StringViewUTF8 utf8_src,
   std::basic_string<CharT>& output) {
   output.clear();
   if (utf8_src.empty()) {
     return;
   }
-  if (static_cast<char8_t>(utf8_src[0]) < 0x80) {
+  if (static_cast<CharUTF8>(utf8_src[0]) < 0x80) {
     // Assume the input is all ASCII, which means 1:1 correspondence.
     output.reserve(utf8_src.length());
     return;
@@ -154,10 +154,8 @@ void PrepareForUTF16Or32Output(
 }
 
 // Instantiate versions we know callers will need.
-template void
-PrepareForUTF16Or32Output(const std::string_view, std::u32string&);
-template void
-PrepareForUTF16Or32Output(const std::string_view, std::u16string&);
+template void PrepareForUTF16Or32Output(const StringViewUTF8, StringUTF32&);
+template void PrepareForUTF16Or32Output(const StringViewUTF8, StringUTF16&);
 
 // NOLINTEND(*-magic-numbers)
 

@@ -11,14 +11,16 @@
 #include <string_view>
 
 #include "base/base_export.h"
+#include "base/compiler_specific.h"
 #include "base/icu/utf.h"
-#include "base/predef.h"
+#include "base/strings/typedefs.h"
 
 namespace longlp::base {
 
 // NOLINTBEGIN(*-magic-numbers)
 
-inline constexpr auto IsValidCodepoint(icu::CodePoint code_point) -> bool {
+LONGLP_ALWAYS_INLINE constexpr auto
+IsValidCodepoint(icu::CodePoint code_point) -> bool {
   // Excludes code points that are not Unicode scalar values, i.e.
   // surrogate code points ([0xD800, 0xDFFF]). Additionally, excludes
   // code points larger than 0x10FFFF (the highest codepoint allowed).
@@ -28,7 +30,8 @@ inline constexpr auto IsValidCodepoint(icu::CodePoint code_point) -> bool {
          (code_point.value() >= 0xE000 && code_point.value() <= 0x10FFFF);
 }
 
-inline constexpr auto IsValidCharacter(icu::CodePoint code_point) -> bool {
+LONGLP_ALWAYS_INLINE constexpr auto
+IsValidCharacter(icu::CodePoint code_point) -> bool {
   // Excludes non-characters (U+FDD0..U+FDEF, and all code points
   // ending in 0xFFFE or 0xFFFF) from the set of valid code points.
   // https://unicode.org/faq/private_use.html#nonchar1
@@ -51,19 +54,19 @@ inline constexpr auto IsValidCharacter(icu::CodePoint code_point) -> bool {
 //
 // Returns true on success. On false, |code_point| will be invalid.
 BASE_EXPORT auto ReadUnicodeCharacter(
-  std::string_view utf8_src,
+  StringViewUTF8 utf8_src,
   size_t& char_index,
   icu::CodePoint& code_point_out) -> bool;
 
 // Reads a UTF-16 character. The usage is the same as the 8-bit version above.
 BASE_EXPORT auto ReadUnicodeCharacter(
-  std::u16string_view utf16_src,
+  StringViewUTF16 utf16_src,
   size_t& char_index,
   icu::CodePoint& code_point_out) -> bool;
 
 // Reads UTF-32 character. The usage is the same as the 8-bit version above.
 BASE_EXPORT auto ReadUnicodeCharacter(
-  std::u32string_view utf32_src,
+  StringViewUTF32 utf32_src,
   size_t& char_index,
   icu::CodePoint& code_point_out) -> bool;
 
@@ -73,22 +76,22 @@ BASE_EXPORT auto ReadUnicodeCharacter(
 // Appends a UTF-8 character to the given 8-bit string.  Returns the number of
 // bytes written.
 BASE_EXPORT auto
-AppendUnicodeCharacter(icu::CodePoint code_point, std::string& utf8_output)
+AppendUnicodeCharacter(icu::CodePoint code_point, StringUTF8& utf8_output)
   -> size_t;
 
 // Appends the given code point as a UTF-16 character to the given 16-bit
 // string.  Returns the number of 16-bit values written.
 BASE_EXPORT auto
-AppendUnicodeCharacter(icu::CodePoint code_point, std::u16string& utf16_output)
+AppendUnicodeCharacter(icu::CodePoint code_point, StringUTF16& utf16_output)
   -> size_t;
 
 // Appends the given UTF-32 character to the given 32-bit string.  Returns the
 // number of 32-bit values written.
-inline auto
-AppendUnicodeCharacter(icu::CodePoint code_point, std::u32string& utf32_output)
+LONGLP_ALWAYS_INLINE auto
+AppendUnicodeCharacter(icu::CodePoint code_point, StringUTF32& utf32_output)
   -> size_t {
   // This is the easy case, just append the character.
-  utf32_output.push_back(static_cast<char32_t>(code_point.value()));
+  utf32_output.push_back(static_cast<CharUTF32>(code_point.value()));
   return 1;
 }
 
@@ -98,16 +101,16 @@ AppendUnicodeCharacter(icu::CodePoint code_point, std::u32string& utf32_output)
 // string, and reserves that amount of space.  We assume that the input
 // character types are unsigned, which will be true for UTF-16 and -32 on our
 // systems.
-template <typename CharT>
+template <CharTraits CharT>
 void PrepareForUTF8Output(
   std::basic_string_view<CharT> src,
-  std::string& utf8_output);
+  StringUTF8& utf8_output);
 
 // Prepares an output buffer (containing either UTF-16 or -32 data) given some
 // UTF-8 input that will be converted to it.  See PrepareForUTF8Output().
-template <typename CharT>
+template <CharTraits CharT>
 void PrepareForUTF16Or32Output(
-  std::string_view utf8_src,
+  StringViewUTF8 utf8_src,
   std::basic_string<CharT>& output);
 
 // NOLINTEND(*-magic-numbers)
