@@ -90,17 +90,17 @@ concept CharTraits = requires(
 // Personal taste, C++ string literal is not easily to remember, make macros
 // instead
 // Usage: LONGLP_..._LITERAL("test123")
-#define LONGLP_INTERNAL_UTF8_LITERAL(x) u8##x
-#define LONGLP_UTF8_LITERAL(x)          LONGLP_INTERNAL_UTF8_LITERAL(x)
+#define LONGLP_INTERNAL_LITERAL_UTF8(x) u8##x
+#define LONGLP_LITERAL_UTF8(x)          LONGLP_INTERNAL_LITERAL_UTF8(x)
 
-#define LONGLP_INTERNAL_UTF16_LITERAL(x) u##x
-#define LONGLP_UTF16_LITERAL(x)          LONGLP_INTERNAL_UTF16_LITERAL(x)
+#define LONGLP_INTERNAL_LITERAL_UTF16(x) u##x
+#define LONGLP_LITERAL_UTF16(x)          LONGLP_INTERNAL_LITERAL_UTF16(x)
 
-#define LONGLP_INTERNAL_UTF32_LITERAL(x) U##x
-#define LONGLP_UTF32_LITERAL(x)          LONGLP_INTERNAL_UTF32_LITERAL(x)
+#define LONGLP_INTERNAL_LITERAL_UTF32(x) U##x
+#define LONGLP_LITERAL_UTF32(x)          LONGLP_INTERNAL_LITERAL_UTF32(x)
 
-#define LONGLP_INTERNAL_ASCII_LITERAL(x) x
-#define LONGLP_ASCII_LITERAL(x)          LONGLP_INTERNAL_ASCII_LITERAL(x)
+#define LONGLP_INTERNAL_LITERAL_ASCII(x) x
+#define LONGLP_LITERAL_ASCII(x)          LONGLP_INTERNAL_LITERAL_ASCII(x)
 }    // namespace longlp::base
 
 #endif    // LONGLP_INCLUDE_BASE_STRINGS_TYPEDEFS_H_

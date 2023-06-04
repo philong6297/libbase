@@ -351,6 +351,69 @@ auto ReplaceChars(
     ReplaceType::kReplaceAll);
 }
 
+enum TrimPositions {
+  kTrimNone     = 0,
+  kTrimLeading  = 1U << 0U,
+  kTrimTrailing = 1U << 1U,
+  kTrimAll      = kTrimLeading | kTrimTrailing,
+};
+
+template <CharTraits CharT>
+auto TrimString(
+  std::basic_string_view<CharT> input,
+  std::basic_string_view<CharT> trim_chars,
+  TrimPositions positions,
+  std::basic_string<CharT>& output) -> TrimPositions {
+  LONGLP_DIAGNOSTIC_PUSH
+  LONGLP_CLANG_DIAGNOSTIC_IGNORED("-Wunsafe-buffer-usage")
+  // Find the edges of leading/trailing whitespace as desired. Need to use
+  // a StringPiece version of input to be able to call find* on it with the
+  // StringPiece version of trim_chars (normally the trim_chars will be a
+  // constant so avoid making a copy).
+  const size_t last_char = input.length() - 1;
+  const size_t first_good_char =
+    (positions & kTrimLeading) ? input.find_first_not_of(trim_chars) : 0;
+  const size_t last_good_char =
+    (positions & kTrimTrailing)
+      ? input.find_last_not_of(trim_chars)
+      : last_char;
+
+  // When the string was all trimmed, report that we stripped off characters
+  // from whichever position the caller was interested in. For empty input, we
+  // stripped no characters, but we still need to clear |output|.
+  if (input.empty() || first_good_char == std::basic_string<CharT>::npos ||
+      last_good_char == std::basic_string<CharT>::npos) {
+    const bool input_was_empty = input.empty();    // in case output == &input
+    output.clear();
+    return input_was_empty ? kTrimNone : positions;
+  }
+
+  // Trim.
+  output.assign(
+    input.data() + first_good_char,
+    last_good_char - first_good_char + 1);
+
+  // Return where we trimmed from.
+  return static_cast<TrimPositions>(
+    (first_good_char == 0 ? kTrimNone : kTrimLeading) |
+    (last_good_char == last_char ? kTrimNone : kTrimTrailing));
+  LONGLP_DIAGNOSTIC_POP
+}
+
+template <CharTraits CharT>
+auto TrimStringView(
+  std::basic_string_view<CharT> input,
+  std::basic_string_view<CharT> trim_chars,
+  TrimPositions positions) -> std::basic_string_view<CharT> {
+  size_t begin =
+    (positions & kTrimLeading) ? input.find_first_not_of(trim_chars) : 0;
+  size_t end =
+    (positions & kTrimTrailing)
+      ? input.find_last_not_of(trim_chars) + 1
+      : input.size();
+  return input.substr(std::min(begin, input.size()), end - begin);
+}
+
 // NOLINTEND(bugprone-easily-swappable-parameters)
 
 }    // namespace longlp::base::internal

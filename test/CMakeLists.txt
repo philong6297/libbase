@@ -44,7 +44,13 @@ set(test_cases
     containers/vector_buffer
     # strings/
     strings/utf_string_conversion_utils
-    strings/string_utils
+    strings/string_utils.compare_case_insensitive_ascii
+    strings/string_utils.equals_case_insensitive_ascii
+    strings/string_utils.remove_chars
+    strings/string_utils.replace_chars
+    strings/string_utils.to_lower_ascii
+    strings/string_utils.to_upper_ascii
+    strings/string_utils.trim_string
     # icu/
     icu/utf.utf8
     icu/utf.utf16
