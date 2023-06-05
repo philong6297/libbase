@@ -32,10 +32,9 @@ namespace internal {
   // See
   // https://unicode-org.github.io/icu-docs/apidoc/released/icu4c/utf8_8h.html#a57f3e5429ae4edb27a42367c627aa482
   // The length can be negative for a NUL-terminated string
-  // offset is enforced as size_t to prevent negative (non-sense) value
   LONGLP_ALWAYS_INLINE void U8Next(
     const uint8_t* src,
-    size_t& offset,
+    int32_t& offset,
     const int32_t length,
     UChar32& codepoint) {
     LONGLP_DIAGNOSTIC_PUSH

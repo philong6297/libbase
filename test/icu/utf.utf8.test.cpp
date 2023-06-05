@@ -88,7 +88,7 @@ TEST(UTF8Test, TestNextPrevChar) {
   for (size_t offset = 0U; offset < kInput.size(); ++offset) {
     UChar32 actual_codepoint = 0;
     auto expected_codepoint  = kExpectedCodePoints.at(i);    // next_safe_ns
-    auto actual_offset       = offset;
+    auto actual_offset       = static_cast<int32_t>(offset);
 
     U8Next(kInput.data(), actual_offset, kInput.size(), actual_codepoint);
 
@@ -154,7 +154,7 @@ TEST(UTF8Test, TestNulTerminated) {
 
   UChar32 actual_codepoint        = 0;
   size_t expected_codepoint_index = 0;
-  size_t i                        = 0;
+  int32_t i                       = 0;
   do {
     const auto prev_i = i;
     U8Next(kInput.data(), i, -1, actual_codepoint);
@@ -189,7 +189,7 @@ TEST(UTF8Test, TestNextPrevNonCharacters) {
 
   UChar32 actual_codepoint{};
 
-  for (size_t idx = 0U; idx < kNonChars.size();) {
+  for (int32_t idx = 0U; idx < std::ssize(kNonChars);) {
     U8Next(kNonChars.data(), idx, kNonChars.size(), actual_codepoint);
     // Keep U_IS_UNICODE_NONCHAR for testing purpose
     EXPECT_TRUE(U_IS_UNICODE_NONCHAR(actual_codepoint)) << fmt::sprintf(
@@ -267,7 +267,7 @@ TEST(UTF8Test, TestSurrogates) {
   // clang-format on
 
   // Keep U8_NEXT_UNSAFE, U_IS_SURROGATE for testing purpose
-  for (size_t i = 0U; i < kB.size();) {
+  for (int32_t i = 0U; i < std::ssize(kB);) {
     auto offset_unsafe       = i;
     UChar32 codepoint_unsafe = 0;
     U8_NEXT_UNSAFE(kB, offset_unsafe, codepoint_unsafe);

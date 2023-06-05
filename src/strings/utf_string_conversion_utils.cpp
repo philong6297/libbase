@@ -15,15 +15,17 @@ auto ReadUnicodeCharacter(
   const StringViewUTF8 utf8_src,
   size_t& char_index,
   icu::CodePoint& code_point_out) -> bool {
+  auto i = static_cast<int32_t>(char_index);
   icu::internal::U8Next(
     std::bit_cast<const uint8_t*>(utf8_src.data()),
-    char_index,
+    i,
     static_cast<int32_t>(utf8_src.length()),
     *code_point_out);
 
   // The ICU macro above moves to the next char, we want to point to the last
   // char consumed.
-  --char_index;
+  --i;
+  char_index = static_cast<size_t>(i);
 
   // Validate the decoded value.
   return IsValidCodepoint(code_point_out);

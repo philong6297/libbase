@@ -21,8 +21,9 @@
 #include "base/containers/vector_buffer.h"
 
 // strings/
-#include "base/strings/string_util_internal.h"
+#include "base/strings/string_utils.constants.h"
 #include "base/strings/string_utils.h"
+#include "base/strings/string_utils.internal.h"
 #include "base/strings/typedefs.h"
 #include "base/strings/utf_string_conversion_utils.h"
 

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a MIT license that can be
 // found in the LICENSE file.
 
-#ifndef LONGLP_INCLUDE_BASE_STRINGS_STRING_UTIL_INTERNAL_H_
-#define LONGLP_INCLUDE_BASE_STRINGS_STRING_UTIL_INTERNAL_H_
+#ifndef LONGLP_INCLUDE_BASE_STRINGS_STRING_UTILS_INTERNAL_H_
+#define LONGLP_INCLUDE_BASE_STRINGS_STRING_UTILS_INTERNAL_H_
 
 #include <algorithm>
 #include <concepts>
@@ -12,11 +12,15 @@
 #include <string_view>
 
 #include "base/compiler_specific.h"
+#include "base/strings/string_utils.constants.h"
 #include "base/strings/typedefs.h"
 
 namespace longlp::base::internal {
-// ASCII-specific tolower.  The standard library's tolower is locale sensitive,
-// so we don't want to use it here.
+// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,
+// bugprone-easily-swappable-parameters)
+
+// ASCII-specific tolower. The standard
+// library's tolower is locale sensitive, so we don't want to use it here.
 template <CharTraits CharT>
 constexpr auto ToLowerASCII(CharT char_value) -> CharT {
   return (char_value >= 'A' && char_value <= 'Z')
@@ -24,7 +28,7 @@ constexpr auto ToLowerASCII(CharT char_value) -> CharT {
          : char_value;
 }
 
-// ASCII-specific toupper.  The standard library's toupper is locale sensitive,
+// ASCII-specific toupper. The standard library's toupper is locale sensitive,
 // so we don't want to use it here.
 template <CharTraits CharT>
 constexpr auto ToUpperASCII(CharT char_value) -> CharT {
@@ -330,7 +334,6 @@ auto DoReplaceMatchesAfterOffset(
   LONGLP_DIAGNOSTIC_POP
 }
 
-// NOLINTBEGIN(bugprone-easily-swappable-parameters)
 template <CharTraits CharT>
 auto ReplaceChars(
   std::basic_string_view<CharT> input,
@@ -414,8 +417,132 @@ auto TrimStringView(
   return input.substr(std::min(begin, input.size()), end - begin);
 }
 
-// NOLINTEND(bugprone-easily-swappable-parameters)
+// Determines the type of ASCII character, independent of locale (the C
+// library versions will change based on locale).
+template <CharTraits CharT, class Tag = void>
+constexpr auto IsASCIIWhitespace(CharT val) -> bool {
+  if constexpr (std::is_same_v<CharT, CharASCII>) {
+    return kWhitespaceASCII.find(val) != StringViewASCII::npos;
+  }
+  if constexpr (std::is_same_v<CharT, CharUTF8>) {
+    return kWhitespaceASCIIAsUTF8.find(val) != StringViewUTF8::npos;
+  }
+  if constexpr (std::is_same_v<CharT, CharUTF16>) {
+    return kWhitespaceASCIIAsUTF16.find(val) != StringViewUTF16::npos;
+  }
+  if constexpr (std::is_same_v<CharT, CharUTF32>) {
+    return kWhitespaceASCIIAsUTF32.find(val) != StringViewUTF32::npos;
+  }
+
+  // Other type should use kWhitespaceASCII
+  return kWhitespaceASCII.find(val) != StringViewASCII::npos;
+}
+
+template <CharTraits CharT>
+constexpr auto IsASCIIAlpha(CharT val) -> bool {
+  return (val >= 'A' && val <= 'Z') || (val >= 'a' && val <= 'z');
+}
+
+template <CharTraits CharT>
+constexpr auto IsASCIIUpper(CharT val) -> bool {
+  return val >= 'A' && val <= 'Z';
+}
+
+template <CharTraits CharT>
+constexpr auto IsASCIILower(CharT val) -> bool {
+  return val >= 'a' && val <= 'z';
+}
+
+template <CharTraits CharT>
+constexpr auto IsASCIIDigit(CharT val) -> bool {
+  return val >= '0' && val <= '9';
+}
+
+template <CharTraits CharT>
+constexpr auto IsASCIIAlphaNumeric(CharT val) -> bool {
+  return IsASCIIAlpha(val) || IsASCIIDigit(val);
+}
+
+template <CharTraits CharT>
+constexpr auto IsASCIIPrintable(CharT val) -> bool {
+  return val >= ' ' && val <= '~';
+}
+
+template <CharTraits CharT>
+constexpr auto IsASCIIControl(CharT val) -> bool {
+  if constexpr (std::is_signed_v<CharT>) {
+    if (val < 0) {
+      return false;
+    }
+  }
+  return val <= '\u001f' || val == '\u007f';
+}
+
+template <CharTraits CharT>
+constexpr auto IsASCIIPunctuation(CharT val) -> bool {
+  return val > '\u0020' && val < '\u007f' && !IsASCIIAlphaNumeric(val);
+}
+
+template <CharTraits CharT>
+constexpr auto IsHexDigit(CharT val) -> bool {
+  return (val >= '0' && val <= '9') || (val >= 'A' && val <= 'F') ||
+         (val >= 'a' && val <= 'f');
+}
+
+// Returns the integer corresponding to the given hex character. For example:
+//    '4' -> 4
+//    'a' -> 10
+//    'B' -> 11
+// Assumes the input is a valid hex character.
+template <CharTraits CharT>
+constexpr auto HexDigitToInt(CharT val) -> std::char_traits<CharT>::int_type {
+  // TODO(longlp, dcheck)
+  // DCHECK(IsHexDigit(val));
+
+  using IntType = std::char_traits<CharT>::int_type;
+  if (val >= '0' && val <= '9') {
+    return static_cast<IntType>(val - '0');
+  }
+  return (val >= 'A' && val <= 'F')
+         ? static_cast<IntType>(val - 'A' + 10)
+         : static_cast<IntType>(val - 'a' + 10);
+}
+
+// Returns whether `val` is a Unicode whitespace character.
+// This cannot be used on eight-bit characters, since if they are ASCII you
+// should call IsASCIIWhitespace(), and if they are from a UTF-8 string they may
+// be individual units of a multi-unit code point.  Convert to 16- or 32-bit
+// values known to hold the full code point before calling this.
+template <CharTraits CharT>
+requires(sizeof(CharT) > 1)
+constexpr auto IsUnicodeWhitespace(CharT val) -> bool {
+  using IntTypeCharT     = std::char_traits<CharT>::int_type;
+  using IntTypeCharUTF16 = std::char_traits<CharUTF16>::int_type;
+  // kWhitespaceUTF16 is a large enough to contains all unicode whitespace
+  for (auto cur : kWhitespaceUTF16) {
+    if (static_cast<std::make_unsigned_t<IntTypeCharUTF16>>(cur) ==
+        static_cast<std::make_unsigned_t<IntTypeCharT>>(val))
+      return true;
+  }
+  return false;
+}
+
+// DANGEROUS: Assumes ASCII or not base on the size of `Char`.  You should
+// probably be explicitly calling IsUnicodeWhitespace() or IsASCIIWhitespace()
+// instead!
+template <CharTraits CharT>
+constexpr auto IsWhitespace(CharT val) -> bool {
+  if constexpr (sizeof(CharT) > 1) {
+    return IsUnicodeWhitespace(val);
+  }
+  else {
+    return IsASCIIWhitespace(val);
+  }
+}
+
+// NOLINTEND(cppcoreguidelines-avoid-magic-numbers,
+// bugprone-easily-swappable-parameters)
 
 }    // namespace longlp::base::internal
 
-#endif    // LONGLP_INCLUDE_BASE_STRINGS_STRING_UTIL_INTERNAL_H_
+#endif    // LONGLP_INCLUDE_BASE_STRINGS_STRING_UTILS_INTERNAL_H_

@@ -51,6 +51,7 @@ set(test_cases
     strings/string_utils.to_lower_ascii
     strings/string_utils.to_upper_ascii
     strings/string_utils.trim_string
+    strings/string_utils.truncate_utf8_to_byte_size
     # icu/
     icu/utf.utf8
     icu/utf.utf16
