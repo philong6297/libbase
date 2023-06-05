@@ -146,7 +146,8 @@ set(BASE_PUBLIC_HEADERS
     icu/utf.h
     # strings/
     strings/utf_string_conversion_utils.h
-    strings/string_util_internal.h
+    strings/string_utils.internal.h
+    strings/string_utils.constants.h
     strings/string_utils.h
     strings/typedefs.h
 )
